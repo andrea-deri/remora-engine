@@ -1,0 +1,70 @@
+name: "Bug Report"
+description: "Report a reproducible issue or unexpected behavior."
+labels:
+  - type/bug
+assignees: []
+body:
+
+  - type: textarea
+    id: Description
+    attributes:
+      label: Description
+      description: Describe the problem you encountered.
+      placeholder: "Example: The engine does not return the default behavior when sending an empty payload."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Provide detailed steps to reproduce the issue.
+      placeholder: |
+        1. Define a new Minnow with this context: `...`
+        2. Send via client the following request: `...`
+        3. Observe the error message
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: "Example: The engine should return the result in the default behavior."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened instead?
+      placeholder: "Example: The engine returns a 500 error with message '...'."
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Provide environment details, if useful for resolving the issue.
+      placeholder: |
+        - OS: Ubuntu 22.04
+        - Go version: 1.24.1
+        - MongoDB version: 7.0
+        - Application version: v0.1.2
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Screenshots
+      description: Attach logs or screenshots that show the problem (if applicable).
+      placeholder: "Paste error logs or attach screenshots here."
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Add any other information that could help us understand or debug the issue.
+      placeholder: "Possible cause, related issues, etc."

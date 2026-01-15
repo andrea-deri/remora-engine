@@ -1,0 +1,36 @@
+name: "Feature Request"
+description: "Propose a new feature or improvement to the project."
+labels:
+  - type/enhancement
+assignees: []
+body:
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Briefly describe your feature request.
+      placeholder: "Example: Add support for cached response."
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Explain why this feature is needed. What problem does it solve?
+      placeholder: "Example: In order to reduce execution time, the retrieve of cached response would be good."
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution(s)
+      description: Describe how you think this could be implemented.
+      placeholder: "Example: Using in-memory cache directly in the service."
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Include any mockups, diagrams, or additional notes about your idea.
+      placeholder: "Links, references, or related discussions."

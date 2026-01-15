@@ -28,5 +28,11 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+
+# MacOS' DS_Store file
+.DS_Store
+
+# Binary compiled files
+bin/
