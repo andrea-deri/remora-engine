@@ -13,7 +13,7 @@ COPY . .
 
 # Build the static executable
 ARG VERSION
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-X 'main.VERSION=${VERSION}' -s -w" -o remora ./cmd
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-X 'main.VERSION=${VERSION}' -s -w" -o remora ./cmd/monolith
 
 # ---------------
 # Stage 2: Run
