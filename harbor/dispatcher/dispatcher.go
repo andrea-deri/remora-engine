@@ -132,12 +132,20 @@ func (dispatcher *HarborDispatcher) run() {
 	for request := range dispatcher.InputChannel {
 
 		// Acquire a concurrency slot before spawning the processing goroutine.
-		dispatcher.requestsSemaphore <- struct{}{}
+		select {
+
+		case dispatcher.requestsSemaphore <- struct{}{}:
+			log.Trace().Msg("Semaphore slot acquired correctly")
+
+		case <-request.Context.Done():
+			log.Debug().Msg("Request expired before acquiring semaphore")
+			continue
+		}
 
 		// Spawn a single goroutine that handle one of the incoming request.
 		// Each goroutine will release its concurrency slot when done.
 		log.Trace().Msgf("Dispatched request: %s", request.Body)
-		go dispatcher.handleRequest(&request)
+		go dispatcher.handleRequest(request)
 	}
 }
 
@@ -147,9 +155,16 @@ func (dispatcher *HarborDispatcher) run() {
 // The send operation is guarded in order to avoid blocking if the request context
 // has expired. The associated semaphore slot is released by the caller once execution
 // completes.
-func (dispatcher *HarborDispatcher) handleRequest(request *message.HarborRequest) {
+func (dispatcher *HarborDispatcher) handleRequest(request message.HarborRequest) {
 
-	log.Debug().Msgf("Request arrived on Dispatcher: %s", request.Body)
+	// Ensure concurrency slot is always released.
+	defer func() {
+		recoveredState := recover()
+		if recoveredState != nil {
+			log.Error().Msgf("Recovered panic for handleRequest in Dispatcher. Releasing request semaphore...")
+		}
+		<-dispatcher.requestsSemaphore
+	}()
 
 	var response message.HarborResponse
 	if isSpecialEndpoint(dispatcher.specialEndpointPrefix, request) {
@@ -171,7 +186,7 @@ func (dispatcher *HarborDispatcher) handleRequest(request *message.HarborRequest
 
 	// If the request context is canceled, skip the send to avoid stale or blocked writes.
 	case <-request.Context.Done():
-		log.Debug().Msgf("Skipped sending response for canceled request: %s", request.Body)
+		log.Warn().Msgf("Skipped sending response for canceled request: %s", request.Body)
 	}
 }
 
@@ -180,7 +195,7 @@ func (dispatcher *HarborDispatcher) handleRequest(request *message.HarborRequest
 // core operation name is evaluated.
 //
 // Unsupported operations return a structured error response with status 400.
-func (dispatcher *HarborDispatcher) handleSpecialRequest(request *message.HarborRequest) message.HarborResponse {
+func (dispatcher *HarborDispatcher) handleSpecialRequest(request message.HarborRequest) message.HarborResponse {
 
 	// Sanitize endpoint path in order to exclude prefix, not used in 2nd-level routing
 	endpointPath := strings.Replace(request.Url, dispatcher.specialEndpointPrefix, "", 1)
@@ -213,10 +228,7 @@ func (dispatcher *HarborDispatcher) handleSpecialRequest(request *message.Harbor
 // that map to simulated Minnow behavior. It performs resource lookup through and,
 // if found, execute validation and response generation.
 // The concurrency slot acquired by the dispatcher loop is released upon completion.
-func (dispatcher *HarborDispatcher) handleStandardRequest(request *message.HarborRequest) message.HarborResponse {
-
-	// Ensure concurrency slot is always released.
-	defer func() { <-dispatcher.requestsSemaphore }()
+func (dispatcher *HarborDispatcher) handleStandardRequest(request message.HarborRequest) message.HarborResponse {
 
 	searchRequest := htp.SearchRequest{
 		Ctx:     request.Context,
@@ -255,7 +267,7 @@ func (dispatcher *HarborDispatcher) handleStandardRequest(request *message.Harbo
 // It evaluates whether the resource defines a valid behavior, reports any validation errors and
 // constructs the appropriate HarborResponse based on the resulting content definition.
 // Validation failure yields standardized error responses.
-func (dispatcher *HarborDispatcher) validateRequest(validationRequest htp.ValidationRequest, request *message.HarborRequest) message.HarborResponse {
+func (dispatcher *HarborDispatcher) validateRequest(validationRequest htp.ValidationRequest, request message.HarborRequest) message.HarborResponse {
 
 	validationResult := dispatcher.tidalEngine.Validate(validationRequest)
 	effectResult := validationResult.Result
@@ -304,7 +316,7 @@ func generateErrorResponse(statusCode int, msg string, errorCode customerror.Rem
 
 // isSpecialEndpoint determines whether the request targets a special internal endpoint.
 // Special endpoints use a distinct URL prefix reserved for internal engine operations.
-func isSpecialEndpoint(specialEndpointPrefix string, request *message.HarborRequest) bool {
+func isSpecialEndpoint(specialEndpointPrefix string, request message.HarborRequest) bool {
 
 	return strings.HasPrefix(request.Url, specialEndpointPrefix)
 }
