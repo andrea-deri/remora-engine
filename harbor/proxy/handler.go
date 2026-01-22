@@ -110,7 +110,17 @@ func (handler *RequestHandler) ServeHTTP(writer http.ResponseWriter, request *ht
 		Str("RequestID", ctx.Value(CONTEXT_KEY_REQUEST_ID).(string)).
 		Msgf("Received request [%s %s] with query parameters [%s], headers [%s], body [%s]", harborRequest.Method, harborRequest.Url, harborRequest.QueryParams, harborRequest.Headers, harborRequest.Body)
 
-	handler.DispatcherChannel <- harborRequest
+	select {
+
+	// Request is sent to Dispatcher's channel: step over and wait for response
+	case handler.DispatcherChannel <- harborRequest:
+		log.Debug().Msgf("Request dispatched to Dispatcher channel: %s", request.Body)
+
+	// Context has received a cancellation signal: send an error in stream writer
+	case <-ctx.Done():
+		writeTimeoutResponse(ctx, writer, harborRequest)
+		return
+	}
 
 	select {
 
@@ -222,7 +232,7 @@ func generateHarborRequest(ctx context.Context, request *http.Request, handler *
 		ContentType:     contentType,
 		QueryParams:     queryParams,
 		Body:            body,
-		ResponseChannel: make(chan message.HarborResponse),
+		ResponseChannel: make(chan message.HarborResponse, 1),
 	}
 }
 
@@ -304,11 +314,14 @@ func encodeResponseBody(writer http.ResponseWriter, response message.HarborRespo
 
 	// Body as mappable content, required as plain text: write it as a raw byte-array
 	case message.CONTENT_TYPE_STRING:
-		_, err := writer.Write([]byte(response.Body.(string)))
-		if err != nil {
-			log.Error().
-				Str("Component", "Harbor").
-				Msgf("Impossible to write string body on HTTP channel: %s", err)
+		responseAsString, isStringContent := response.Body.(string)
+		if isStringContent {
+			_, err := writer.Write([]byte(responseAsString))
+			if err != nil {
+				log.Error().
+					Str("Component", "Harbor").
+					Msgf("Impossible to write string body on HTTP channel: %s", err)
+			}
 		}
 
 	// Body as mappable content, required as XML: write it with XML encoder

@@ -43,6 +43,10 @@ func extractHeaders(request *http.Request) map[string]any {
 // If no known type is detected, an empty ContentType is returned.
 func extractContentTypeFromString(headerRawValue any) message.ContentType {
 
+	if headerRawValue == nil {
+		return ""
+	}
+
 	// The header value is converted in lower-case, avoiding possible errors in comparation
 	headerValue := headerRawValue.(string)
 	headerValue = strings.ToLower(headerValue)
