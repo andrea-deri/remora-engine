@@ -23,5 +23,5 @@ Public contribution will open once the project reaches beta phase.
 
 
 ## Next steps
- - Read the [REMORA Engine documentation](https://github.com/andrea-deri/remora-engine/tree/main/docs/README.md)
+ - Read the [REMORA Engine documentation](https://andrea-deri.github.io/remora-engine/)
  - [Open an issue](https://github.com/andrea-deri/remora-engine/issues) about bugfix or enhancement
