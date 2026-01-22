@@ -1,3 +1,4 @@
-theme: jekyll-theme-cayman
+remote_theme: pmarsceill/just-the-docs
 title: REMORA Engine
-description: Reactive Engine for Mocked Runtime Actions
+description: Official documentation for Remora Engine
+theme: null
